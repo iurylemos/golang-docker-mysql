@@ -11,6 +11,8 @@ import (
 
 func main() {
 
+	// CRUD - "C"REATE (POST), "R"EAD (GET), "U"PDATE (UPDATE), "D"ELETE (DELETE)
+
 	router := mux.NewRouter()
 
 	router.HandleFunc("/usuarios", routes.CreateUser).Methods(http.MethodPost)
