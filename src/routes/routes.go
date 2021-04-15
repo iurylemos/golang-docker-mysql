@@ -86,5 +86,59 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write(responseJson)
+}
+
+func FindUsers(w http.ResponseWriter, r *http.Request) {
+	db, erro := db.Connectar()
+
+	if erro != nil {
+		w.Write(helper.RespMessageError("Wrong to connect with database"))
+		return
+	}
+
+	defer db.Close()
+
+	//SELECT * FROM usuarios
+
+	rows, erro := db.Query("SELECT * FROM usuarios")
+
+	if erro != nil {
+		w.Write(helper.RespMessageError("Failed to tried find users"))
+		return
+	}
+
+	defer rows.Close()
+
+	// create slice for users
+	var users []user
+
+	// how i am get all users for query
+	// this rows return me several rows so i go through that slice of users below
+	for rows.Next() {
+		var u user
+
+		// ROW = 1 JOÃO EMAIL
+		// I GO SCANNING EACH ONE THESES ROWS
+		// AND GO THROW THESES ROWS IN INSIDE SLICE THE USERS
+
+		if erro := rows.Scan(&u.ID, &u.Nome, &u.Email); erro != nil {
+			w.Write(helper.RespMessageError("Failed to tried find users"))
+			return
+		}
+
+		// insert user in slice users
+		users = append(users, u)
+
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(users); err != nil {
+		w.Write(helper.RespMessageError("Failed when scanning user"))
+		return
+	}
+}
+
+func FindUser(w http.ResponseWriter, r *http.Request) {
 
 }
