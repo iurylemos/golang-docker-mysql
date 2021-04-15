@@ -7,6 +7,9 @@ import (
 	"goolang-with-docker/src/helper"
 	"io/ioutil"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 type user struct {
@@ -16,6 +19,7 @@ type user struct {
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	// fmt.Println("Entrou aqui")
 	bodyRequest, erro := ioutil.ReadAll(r.Body)
 
@@ -75,7 +79,6 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	// json.NewEncoder(w).Encode(map[string]string{"status": "OK"})
 
 	//STATUS CODE: 201 CREATED, 404 NOT FOUND, 204 NOT CONTENT
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
 	responseJson, erro := helper.ResponseJSON(fmt.Sprintf("User created with success! ID: %d", idInsercao))
@@ -89,6 +92,8 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func FindUsers(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	db, erro := db.Connectar()
 
 	if erro != nil {
@@ -131,7 +136,6 @@ func FindUsers(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(users); err != nil {
 		w.Write(helper.RespMessageError("Failed when scanning user"))
@@ -140,5 +144,43 @@ func FindUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func FindUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	parameters := mux.Vars(r)
+
+	// Convert o ID (string) for (int)
+	// this function received 3 parameteres
+	// value, base => base 10 (ten) why this is int, and 32 (thirteen-two) length of bits or 64 (sixteen-four)
+	ID, erro := strconv.ParseUint(parameters["id"], 10, 32)
+	if erro != nil {
+		w.Write(helper.RespMessageError("Error to convert parameter. Value is not valid"))
+		return
+	}
+
+	db, erro := db.Connectar()
+
+	if erro != nil {
+		w.Write(helper.RespMessageError("Wrong to connect with database"))
+		return
+	}
+
+	row, erro := db.Query("SELECT * FROM usuarios WHERE id = ?", ID)
+
+	if erro != nil {
+		w.Write(helper.RespMessageError("Wrong to connect with database"))
+		return
+	}
+
+	var u user
+	if row.Next() {
+		if erro := row.Scan(&u.ID, &u.Nome, &u.Email); erro != nil {
+			w.Write(helper.RespMessageError("Failed to scanning user inside the db"))
+			return
+		}
+	}
+
+	if err := json.NewEncoder(w).Encode(u); err != nil {
+		w.Write(helper.RespMessageError("Failed when scanning user"))
+		return
+	}
 
 }
