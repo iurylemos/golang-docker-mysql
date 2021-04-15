@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"goolang-with-docker/src/db"
+	"goolang-with-docker/src/helper"
 	"io/ioutil"
 	"net/http"
 )
@@ -14,23 +15,19 @@ type user struct {
 	Email string `json:"email"`
 }
 
-type response struct {
-	Message string `json:"message"`
-}
-
 func CreateUser(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Entrou aqui")
+	// fmt.Println("Entrou aqui")
 	bodyRequest, erro := ioutil.ReadAll(r.Body)
 
 	if erro != nil {
-		w.Write([]byte("Failed to read body request"))
+		w.Write(helper.RespMessageError("Failed to read body request"))
 		return
 	}
 
 	var user user
 
 	if erro = json.Unmarshal(bodyRequest, &user); erro != nil {
-		w.Write([]byte("Something wrong happened"))
+		w.Write(helper.RespMessageError("Something wrong happened"))
 		return
 	}
 
@@ -39,7 +36,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	db, erro := db.Connectar()
 
 	if erro != nil {
-		w.Write([]byte("Failed to connecting with DB"))
+		w.Write(helper.RespMessageError("Failed to connecting with DB"))
 		return
 	}
 
@@ -52,7 +49,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	statement, erro := db.Prepare("INSERT INTO usuarios (nome, email) values (?, ?)")
 
 	if erro != nil {
-		w.Write([]byte("Error creating statement in DB"))
+		w.Write(helper.RespMessageError("Error creating statement in DB"))
 		return
 	}
 
@@ -61,7 +58,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	insercao, erro := statement.Exec(user.Nome, user.Email)
 
 	if erro != nil {
-		w.Write([]byte("Error to insert data in DB"))
+		w.Write(helper.RespMessageError("Error to insert data in DB"))
 		return
 	}
 
@@ -71,7 +68,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	idInsercao, erro := insercao.LastInsertId()
 
 	if erro != nil {
-		w.Write([]byte("Error to get ID insert in DB"))
+		w.Write(helper.RespMessageError("Error to get ID insert in DB"))
 		return
 	}
 
@@ -81,15 +78,13 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	responseRequest := response{Message: fmt.Sprintf("User created with success! ID: %d", idInsercao)}
-
-	responseJson, erro := json.Marshal(responseRequest)
+	responseJson, erro := helper.ResponseJSON(fmt.Sprintf("User created with success! ID: %d", idInsercao))
 
 	if erro != nil {
-		w.Write([]byte("Something wrong happened"))
+		w.Write(helper.RespMessageError("Something wrong happened"))
 		return
 	}
 
-	w.Write([]byte(responseJson))
+	w.Write(responseJson)
 
 }
