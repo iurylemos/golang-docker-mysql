@@ -17,4 +17,4 @@
 - Create User `http://localhost/usuarios (POST)` 
 - Update User `http://localhost/usuarios/ID (PUT)` 
 - Delete User `http://localhost/usuarios/ID (DELETE)` 
-- Find User `http://localhost/usuarios/ID (FIND)` 
+- Find User `http://localhost/usuarios/ID (GET)` 
