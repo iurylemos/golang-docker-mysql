@@ -184,3 +184,59 @@ func FindUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
+func UpdateUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	parameters := mux.Vars(r)
+
+	ID, erro := strconv.ParseUint(parameters["id"], 10, 32)
+	if erro != nil {
+		w.Write(helper.RespMessageError("Error to convert parameter. Value is not valid"))
+		return
+	}
+
+	bodyRequest, erro := ioutil.ReadAll(r.Body)
+
+	if erro != nil {
+		w.Write(helper.RespMessageError("Error to read body request. Please, try again"))
+		return
+	}
+
+	var user user
+
+	if erro := json.Unmarshal(bodyRequest, &user); erro != nil {
+		w.Write(helper.RespMessageError("Error to convert user sent of body request"))
+		return
+	}
+
+	//open connected with db after that read body request
+	db, erro := db.Connectar()
+
+	if erro != nil {
+		w.Write(helper.RespMessageError("Wrong to connect with database"))
+		return
+	}
+
+	//insert, delete, update theses cases is for use statement
+	defer db.Close()
+
+	statement, erro := db.Prepare("UPDATE usuarios SET nome = ?, email = ? where id = ?")
+	if erro != nil {
+		w.Write(helper.RespMessageError("Error to created statement"))
+		return
+	}
+	defer statement.Close()
+
+	if _, erro := statement.Exec(user.Nome, user.Email, ID); erro != nil {
+		w.Write(helper.RespMessageError("Error to update user in database"))
+		return
+	}
+
+	user.ID = uint32(ID)
+
+	// w.WriteHeader(http.StatusNoContent)
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		w.Write(helper.RespMessageError("Something went wrong. Please try again after"))
+		return
+	}
+}
