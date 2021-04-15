@@ -240,3 +240,48 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	parameters := mux.Vars(r)
+
+	ID, erro := strconv.ParseUint(parameters["id"], 10, 32)
+	if erro != nil {
+		w.Write(helper.RespMessageError("Error to convert parameter. Value is not valid"))
+		return
+	}
+
+	db, erro := db.Connectar()
+
+	if erro != nil {
+		w.Write(helper.RespMessageError("Wrong to connect with database"))
+		return
+	}
+
+	//insert, delete, update theses cases is for use statement
+	defer db.Close()
+
+	statement, erro := db.Prepare("DELETE FROM usuarios WHERE id = ?")
+	if erro != nil {
+		w.Write(helper.RespMessageError("Error to created statement"))
+		return
+	}
+
+	defer statement.Close()
+
+	if _, erro := statement.Exec(ID); erro != nil {
+		w.Write(helper.RespMessageError("Error to delete user in database"))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	responseJson, erro := helper.ResponseJSON(fmt.Sprintf("User delete with success! ID: %d", ID))
+
+	if erro != nil {
+		w.Write(helper.RespMessageError("Something wrong happened"))
+		return
+	}
+
+	w.Write(responseJson)
+}
