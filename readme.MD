@@ -1,4 +1,4 @@
-# Projeto Golang CRUD
+# Project Golang CRUD with MYSQL
 
 ### Features
 
